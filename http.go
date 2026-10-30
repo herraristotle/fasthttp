@@ -1617,7 +1617,16 @@ func (req *Request) Write(w *bufio.Writer) error {
 		} else if !req.UseHostHeader {
 			req.Header.SetHostBytes(host)
 		}
-		req.Header.SetRequestURIBytes(uri.RequestURI())
+		// PATCH gobypass403: a caller may set its own request line with
+		// Header.SetRequestURIBytes (e.g. "GET @evil.com HTTP/1.1", an
+		// authority-form line, or a raw variant the URI parser would rewrite).
+		// Upstream re-derives the line from the URI object here and clobbers
+		// it. Callers that need their line preserved opt out with
+		// Header.DisableRequestURISync(); everyone else keeps upstream
+		// behaviour, including the URI-to-line reduction on write.
+		if !req.Header.disableRequestURISync {
+			req.Header.SetRequestURIBytes(uri.RequestURI())
+		}
 
 		if len(uri.username) > 0 {
 			// RequestHeader.SetBytesKV only uses RequestHeader.bufKV.key

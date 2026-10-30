@@ -58,6 +58,17 @@ type URI struct {
 	password        []byte
 	parsedQueryArgs bool
 
+	// PATCH gobypass403: whether the raw URI carried a '?' / '#' delimiter at
+	// all. Upstream infers it from the parsed value, so a bare "/admin?" is
+	// re-emitted as "/admin" — dropping a delimiter some back-ends route on.
+	hasQueryString bool
+	hasHash        bool
+
+	// PreserveDelimiters makes RequestURI re-emit a bare '?' / '#' that was
+	// present in the parsed URI. Off by default: a fragment has no business in
+	// a request line for ordinary clients. PATCH gobypass403.
+	PreserveDelimiters bool
+
 	// Path values are sent as-is without normalization.
 	//
 	// Disabled path normalization may be useful for proxying incoming requests
@@ -83,6 +94,10 @@ func (u *URI) CopyTo(dst *URI) {
 	u.queryArgs.CopyTo(&dst.queryArgs)
 	dst.parsedQueryArgs = u.parsedQueryArgs
 	dst.DisablePathNormalizing = u.DisablePathNormalizing
+	// PATCH gobypass403
+	dst.hasQueryString = u.hasQueryString
+	dst.hasHash = u.hasHash
+	dst.PreserveDelimiters = u.PreserveDelimiters
 
 	// fullURI and requestURI shouldn't be copied, since they are created
 	// from scratch on each FullURI() and RequestURI() call.
@@ -239,6 +254,9 @@ func (u *URI) Reset() {
 	u.queryArgs.Reset()
 	u.parsedQueryArgs = false
 	u.DisablePathNormalizing = false
+	// PATCH gobypass403: delimiter presence belongs to the parsed URI.
+	u.hasQueryString = false
+	u.hasHash = false
 
 	// There is no need in u.fullURI = u.fullURI[:0], since full uri
 	// is calculated on each call to FullURI().
@@ -322,6 +340,10 @@ func (u *URI) parse(host, uri []byte, isTLS bool) error {
 	b := uri
 	queryIndex := bytes.IndexByte(b, '?')
 	fragmentIndex := bytes.IndexByte(b, '#')
+	// PATCH gobypass403: record delimiter presence before either index is
+	// normalised away, so RequestURI can re-emit a bare '?' / '#'.
+	u.hasQueryString = queryIndex >= 0
+	u.hasHash = fragmentIndex >= 0 && (queryIndex < 0 || fragmentIndex > queryIndex)
 	// Ignore query in fragment part
 	if fragmentIndex >= 0 && queryIndex > fragmentIndex {
 		queryIndex = -1
@@ -689,6 +711,19 @@ func (u *URI) RequestURI() []byte {
 	} else if len(u.queryString) > 0 {
 		dst = append(dst, '?')
 		dst = append(dst, u.queryString...)
+	}
+	// PATCH gobypass403: keep a bare '?' / '#' that was present on the wire.
+	// Upstream keys off the parsed value, so "/admin?" becomes "/admin".
+	// Opt-in via PreserveDelimiters: emitting a fragment in a request line is
+	// wrong for ordinary HTTP clients, and upstream tests assert it is dropped.
+	if u.PreserveDelimiters && u.hasQueryString && len(dst) > 0 && dst[len(dst)-1] != '?' && u.queryArgs.Len() == 0 && len(u.queryString) == 0 {
+		dst = append(dst, '?')
+	}
+	if u.PreserveDelimiters && u.hasHash && !bytes.ContainsRune(dst, '#') {
+		dst = append(dst, '#')
+		if len(u.hash) > 0 {
+			dst = append(dst, u.hash...)
+		}
 	}
 	u.requestURI = dst
 	return u.requestURI

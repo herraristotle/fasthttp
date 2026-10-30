@@ -82,6 +82,10 @@ type RequestHeader struct {
 
 	disableSpecialHeader bool
 	cookiesCollected     bool
+
+	// disableRequestURISync lets a client keep a request line it set itself
+	// with SetRequestURIBytes; see Request.Write. PATCH gobypass403.
+	disableRequestURISync bool
 }
 
 // SetContentRange sets 'Content-Range: bytes startPos-endPos/contentLength'
@@ -838,6 +842,22 @@ func (h *RequestHeader) DisableSpecialHeader() {
 // This is suggested and enabled by default.
 func (h *RequestHeader) EnableSpecialHeader() {
 	h.disableSpecialHeader = false
+}
+
+// DisableRequestURISync keeps the request line set with SetRequestURIBytes
+// when the request is written. By default Request.Write replaces it with the
+// path derived from the request's URI object, which is correct for callers
+// that only set the URI components. A client that writes its own request line
+// (proxies, raw-request tooling — e.g. "GET @evil.com HTTP/1.1") needs the
+// line to survive. PATCH gobypass403.
+func (h *RequestHeader) DisableRequestURISync() {
+	h.disableRequestURISync = true
+}
+
+// EnableRequestURISync restores the default of deriving the request line from
+// the URI object on write. PATCH gobypass403.
+func (h *RequestHeader) EnableRequestURISync() {
+	h.disableRequestURISync = false
 }
 
 // DisableNormalizing disables header names' normalization.
