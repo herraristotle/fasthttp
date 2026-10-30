@@ -411,7 +411,7 @@ func TestRequestRawHeaders(t *testing.T) {
 			t.Fatalf("expecting non empty value. Got %q", v2)
 		}
 		// We accept invalid headers with a space.
-		// See: https://github.com/valyala/fasthttp/issues/1917
+		// See: https://github.com/herraristotle/fasthttp/issues/1917
 		v3 := h.Peek("uSeR agent")
 		if !bytes.Equal(v3, []byte("agent")) {
 			t.Fatalf("expecting non empty value. Got %q", v3)
@@ -2628,7 +2628,7 @@ func TestResponseHeaderReadSuccess(t *testing.T) {
 	if !h.ConnectionClose() {
 		t.Fatalf("expecting connection: close for identity response")
 	}
-	// See https://github.com/valyala/fasthttp/issues/1909
+	// See https://github.com/herraristotle/fasthttp/issues/1909
 	if hasArg(h.h, HeaderTransferEncoding) {
 		t.Fatalf("unexpected header: 'Transfer-Encoding' should not be present in parsed headers")
 	}

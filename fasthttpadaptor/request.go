@@ -7,7 +7,7 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/valyala/fasthttp"
+	"github.com/herraristotle/fasthttp"
 )
 
 // ConvertRequest converts a fasthttp.Request to an http.Request.

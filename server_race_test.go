@@ -4,7 +4,7 @@ package fasthttp
 
 import (
 	"context"
-	"github.com/valyala/fasthttp/fasthttputil"
+	"github.com/herraristotle/fasthttp/fasthttputil"
 	"math"
 	"testing"
 )

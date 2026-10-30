@@ -3,7 +3,7 @@ package fasthttpproxy
 import (
 	"time"
 
-	"github.com/valyala/fasthttp"
+	"github.com/herraristotle/fasthttp"
 )
 
 const (

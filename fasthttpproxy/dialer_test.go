@@ -8,7 +8,7 @@ import (
 	"sync/atomic"
 	"testing"
 
-	"github.com/valyala/fasthttp"
+	"github.com/herraristotle/fasthttp"
 	"golang.org/x/net/http/httpproxy"
 )
 

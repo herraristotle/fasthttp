@@ -1757,7 +1757,7 @@ func (resp *Response) brotliBody(level int) {
 	if resp.bodyStream != nil {
 		// Reset Content-Length to -1, since it is impossible
 		// to determine body size beforehand of streamed compression.
-		// For https://github.com/valyala/fasthttp/issues/176 .
+		// For https://github.com/herraristotle/fasthttp/issues/176 .
 		resp.Header.SetContentLength(-1)
 
 		// Do not care about memory allocations here, since brotli is slow
@@ -1815,7 +1815,7 @@ func (resp *Response) gzipBody(level int) {
 	if resp.bodyStream != nil {
 		// Reset Content-Length to -1, since it is impossible
 		// to determine body size beforehand of streamed compression.
-		// For https://github.com/valyala/fasthttp/issues/176 .
+		// For https://github.com/herraristotle/fasthttp/issues/176 .
 		resp.Header.SetContentLength(-1)
 
 		// Do not care about memory allocations here, since gzip is slow
@@ -1873,7 +1873,7 @@ func (resp *Response) deflateBody(level int) {
 	if resp.bodyStream != nil {
 		// Reset Content-Length to -1, since it is impossible
 		// to determine body size beforehand of streamed compression.
-		// For https://github.com/valyala/fasthttp/issues/176 .
+		// For https://github.com/herraristotle/fasthttp/issues/176 .
 		resp.Header.SetContentLength(-1)
 
 		// Do not care about memory allocations here, since flate is slow
@@ -2341,7 +2341,7 @@ func writeBodyFixedSize(w *bufio.Writer, r io.Reader, size int64) error {
 // available. however, os.File and net.TCPConn unfortunately have a
 // fallback in their WriterTo that calls io.Copy if sendfile isn't possible.
 //
-// See issue: https://github.com/valyala/fasthttp/issues/1889
+// See issue: https://github.com/herraristotle/fasthttp/issues/1889
 //
 // sendfile can only be triggered when copying between os.File and net.TCPConn.
 // Since the function confirming zero-copy is a private function, we use
@@ -2494,7 +2494,7 @@ func readBodyWithStreaming(r *bufio.Reader, contentLength, maxBodySize int, dst 
 	// the br buffer. This could affect the handling of the next request
 	// in the br buffer, if there is one. The original two branches can
 	// be handled with this single branch. by the way,
-	// fix issue: https://github.com/valyala/fasthttp/issues/1816
+	// fix issue: https://github.com/herraristotle/fasthttp/issues/1816
 	b, err = appendBodyFixedSize(r, dst, readN)
 	if err != nil {
 		return b, err
