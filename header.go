@@ -38,6 +38,12 @@ type header struct {
 	noHTTP11              bool
 	connectionClose       bool
 	noDefaultContentType  bool
+
+	// lenientHeaderValue accepts control bytes in header values that RFC 9110
+	// forbids. Response parsers need this to observe what a front-end actually
+	// sent instead of failing the read; request writers use it to reproduce a
+	// malformed value the target accepted. Off by default. PATCH gobypass403.
+	lenientHeaderValue bool
 }
 
 // ResponseHeader represents HTTP response header.
@@ -858,6 +864,20 @@ func (h *RequestHeader) DisableRequestURISync() {
 // the URI object on write. PATCH gobypass403.
 func (h *RequestHeader) EnableRequestURISync() {
 	h.disableRequestURISync = false
+}
+
+// EnableLenientHeaderValues accepts control bytes in header values that
+// RFC 9110 rejects, for both request and response headers. Use it to observe a
+// malformed value a front-end actually sent, or to reproduce one a target
+// accepted. Disabled by default. PATCH gobypass403.
+func (h *RequestHeader) EnableLenientHeaderValues() {
+	h.lenientHeaderValue = true
+}
+
+// EnableLenientHeaderValues accepts control bytes in response header values.
+// See RequestHeader.EnableLenientHeaderValues. PATCH gobypass403.
+func (h *ResponseHeader) EnableLenientHeaderValues() {
+	h.lenientHeaderValue = true
 }
 
 // DisableNormalizing disables header names' normalization.
@@ -2844,10 +2864,13 @@ func (h *ResponseHeader) parseHeaders(buf []byte) (int, error) {
 		}
 		normalizeHeaderKey(s.key, disableNormalizing)
 
-		for _, ch := range s.value {
-			if !validHeaderValueByte(ch) {
-				h.connectionClose = true
-				return 0, fmt.Errorf("invalid header value %q", s.value)
+		// PATCH gobypass403: opt-in leniency, see header.lenientHeaderValue.
+		if !h.lenientHeaderValue {
+			for _, ch := range s.value {
+				if !validHeaderValueByte(ch) {
+					h.connectionClose = true
+					return 0, fmt.Errorf("invalid header value %q", s.value)
+				}
 			}
 		}
 
@@ -2966,10 +2989,13 @@ func (h *RequestHeader) parseHeaders(buf []byte) (int, error) {
 		}
 		normalizeHeaderKey(s.key, disableNormalizing)
 
-		for _, ch := range s.value {
-			if !validHeaderValueByte(ch) {
-				h.connectionClose = true
-				return 0, fmt.Errorf("invalid header value %q", s.value)
+		// PATCH gobypass403: opt-in leniency, see header.lenientHeaderValue.
+		if !h.lenientHeaderValue {
+			for _, ch := range s.value {
+				if !validHeaderValueByte(ch) {
+					h.connectionClose = true
+					return 0, fmt.Errorf("invalid header value %q", s.value)
+				}
 			}
 		}
 
